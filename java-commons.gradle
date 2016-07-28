@@ -1,0 +1,79 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+apply plugin: 'java'
+apply plugin: "com.github.johnrengelman.shadow"
+
+shadowJar {
+    mergeServiceFiles()
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+}
+
+
+def fetchGitCommit() {
+    try {
+        def ref = new File(".git/HEAD").readLines()[0]
+        def sha1
+        if (ref.startsWith("ref") ){
+            sha1 = new File(".git", ref.substring(5)).getText().substring(0,8)
+        }
+        else {
+            sha1 = ref.substring(0,8)
+        }
+        return sha1
+    } catch (e) {
+        logger.log(LogLevel.WARN, "Unable to get GIT commit: $e")
+        return "<unknown>"
+    }
+}
+
+ext { 
+    gitCommit = fetchGitCommit()
+}
+
+processResources {
+
+    filesMatching("*.properties") {
+        filter(ReplaceTokens, tokens: project.properties.findAll { k,v -> k && v })
+    }
+}
+
+task ('processDockerfile', type: Copy) {
+    from 'src'
+    into buildDir
+    include '**/*Dockerfile'
+    filesMatching("**/*Dockerfile") { details ->
+        details.path = "${details.name}"
+    }
+    includeEmptyDirs = false
+
+    filter(ReplaceTokens, tokens: project.properties.findAll { k,v -> k && v } )
+
+}
+
+task ('addBuildProperties') << {
+    new File("${sourceSets.main.output.resourcesDir}").mkdirs()
+    new File("${sourceSets.main.output.resourcesDir}", "${project.name}-build.properties").withWriter('UTF-8'){
+        def props = new Properties()
+        props.putAll([
+            'version': project.version,
+            'gitCommit': gitCommit,
+            'timestamp': new Date().format("yyyyMMdd-HHmmss")
+        ])
+        if (System.getenv('BUILD_ID'))
+            props.put('buildId', System.getenv('BUILD_ID'))
+        props.store(it, null)
+    }
+}
+
+jar.finalizedBy processDockerfile
+jar.finalizedBy shadowJar
+jar.dependsOn addBuildProperties
+
+compileJava.options.encoding = 'UTF-8'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+
