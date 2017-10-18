@@ -33,5 +33,3 @@ task ('processDockerfile', type: Copy) {
     filter(ReplaceTokens, tokens: project.properties.findAll { k,v -> k && v } )
 
 }
-
-build.finalizedBy processDockerfile

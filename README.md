@@ -16,7 +16,12 @@ apply from: 'https://raw.githubusercontent.com/SpazioDati/gradle-plugins/master/
 - add `gitCommit` property by fetching git sha
 - new task `processDockerfile` that process any file matching
 `src/**/*Dockerfile` with tag replacing and put the processed
-version in `build/*Dockerfile`. This task is executed at the end of the build.
+version in `build/*Dockerfile`. This task is no executed by default, you have to enable this. If you want you can add this in your build by adding the following
+
+```
+build.finalizedBy processDockerfile
+```
+
 
 
 ## Java commons
