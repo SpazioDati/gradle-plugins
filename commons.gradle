@@ -34,4 +34,4 @@ task ('processDockerfile', type: Copy) {
 
 }
 
-processResources.finalizedBy processDockerfile
+build.finalizedBy processDockerfile
