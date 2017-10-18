@@ -1,0 +1,29 @@
+apply plugin: 'net.researchgate.release'
+
+release {
+    failOnSnapshotDependencies = false
+    failOnPublishNeeded = false
+    git.requireBranch = "develop"
+    git.pushToRemote = "origin"
+}
+
+def exec(String... commands) {
+    println "Executing $commands"
+    Process pid = commands.execute(System.getenv().collect { "$it.key=$it.value"}, project.rootDir)
+    pid.waitForProcessOutput(System.out, System.err)
+    if (pid.exitValue() != 0)
+        throw new GradleException("Command ${commands[0]} failed with exit code ${pid.exitValue()}")
+}
+
+preTagCommit.doLast {
+    def pushto = project.extensions['release'].git.pushToRemote
+    println "Pushto: $pushto"
+    exec "git", "checkout","master"
+    exec "git", "pull"
+    exec "git", "merge", "develop"
+    if (pushto) exec "git", "push", "$pushto", "master"
+}
+
+updateVersion.doFirst {
+    exec "git", "checkout", "develop"
+}

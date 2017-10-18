@@ -11,26 +11,6 @@ shadowJar {
 }
 
 
-def fetchGitCommit() {
-    try {
-        def ref = new File(".git/HEAD").readLines()[0]
-        def sha1
-        if (ref.startsWith("ref") ){
-            sha1 = new File(".git", ref.substring(5)).getText().substring(0,8)
-        }
-        else {
-            sha1 = ref.substring(0,8)
-        }
-        return sha1
-    } catch (e) {
-        logger.log(LogLevel.WARN, "Unable to get GIT commit: $e")
-        return "<unknown>"
-    }
-}
-
-ext { 
-    gitCommit = fetchGitCommit()
-}
 
 processResources {
 
@@ -58,11 +38,15 @@ task ('addBuildProperties') << {
         def props = new Properties()
         props.putAll([
             'version': project.version,
-            'gitCommit': gitCommit,
             'timestamp': new Date().format("yyyyMMdd-HHmmss")
         ])
         if (System.getenv('BUILD_ID'))
             props.put('buildId', System.getenv('BUILD_ID'))
+        if (System.getenv('GIT_COMMIT'))
+            props.put('gitCommit', System.getenv('GIT_COMMIT'))
+        else if (project.ext.has('gitGommit'))
+            props.put('gitCommit', System.getenv('GIT_COMMIT'))
+
         props.store(it, null)
     }
 }
@@ -75,5 +59,3 @@ compileJava.options.encoding = 'UTF-8'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
-
-
