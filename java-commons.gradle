@@ -10,26 +10,11 @@ shadowJar {
     exclude 'META-INF/*.RSA'
 }
 
-
-
 processResources {
 
     filesMatching("*.properties") {
         filter(ReplaceTokens, tokens: project.properties.findAll { k,v -> k && v })
     }
-}
-
-task ('processDockerfile', type: Copy) {
-    from 'src'
-    into buildDir
-    include '**/*Dockerfile'
-    filesMatching("**/*Dockerfile") { details ->
-        details.path = "${details.name}"
-    }
-    includeEmptyDirs = false
-
-    filter(ReplaceTokens, tokens: project.properties.findAll { k,v -> k && v } )
-
 }
 
 task ('addBuildProperties') << {
@@ -51,7 +36,6 @@ task ('addBuildProperties') << {
     }
 }
 
-jar.finalizedBy processDockerfile
 jar.finalizedBy shadowJar
 jar.dependsOn addBuildProperties
 

@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 def fetchGitCommit() {
     try {
         def ref = new File(".git/HEAD").readLines()[0]
@@ -18,3 +20,18 @@ def fetchGitCommit() {
 ext {
     gitCommit = fetchGitCommit()
 }
+
+task ('processDockerfile', type: Copy) {
+    from 'src'
+    into buildDir
+    include '**/*Dockerfile'
+    filesMatching("**/*Dockerfile") { details ->
+        details.path = "${details.name}"
+    }
+    includeEmptyDirs = false
+
+    filter(ReplaceTokens, tokens: project.properties.findAll { k,v -> k && v } )
+
+}
+
+processResources.finalizedBy processDockerfile
