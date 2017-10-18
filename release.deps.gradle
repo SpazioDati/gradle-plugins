@@ -1,0 +1,4 @@
+
+    dependencies {
+        classpath "net.researchgate:gradle-release:2.6.0"
+    }
